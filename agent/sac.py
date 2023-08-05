@@ -41,18 +41,22 @@ class SACAgent(Agent):
         # set target entropy to -|A|
         self.target_entropy = -action_dim
 
+        self.encoder = nn.Sequential(nn.Linear(obs_dim, 256), nn.ELU, nn.Linear(256, 64), nn.ELU, nn.Linear(64, 8))
+
         # optimizers
-        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(),
+        self.actor_optimizer = torch.optim.Adam(list(self.actor.parameters()) + list(self.encoder.parameters()),
                                                 lr=actor_lr,
                                                 betas=actor_betas)
 
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(),
+        self.critic_optimizer = torch.optim.Adam(list(self.critic.parameters()) + list(self.encoder.parameters()),
                                                  lr=critic_lr,
                                                  betas=critic_betas)
 
         self.log_alpha_optimizer = torch.optim.Adam([self.log_alpha],
                                                     lr=alpha_lr,
                                                     betas=alpha_betas)
+
+        # self.encoder_optimizer = torch.optim.Adam((self.encoder.parameters()))
 
         self.train()
         self.critic_target.train()
@@ -158,5 +162,6 @@ class SACAgent(Agent):
             'critic_state_dict': self.critic.state_dict(),
             'actor_optimizer_state_dict': self.actor_optimizer.state_dict(),
             'critic_optimizer_state_dict': self.critic_optimizer.state_dict(),
+            "encoder": self.encoder.state_dict(),
             'step': step,
             }, path)

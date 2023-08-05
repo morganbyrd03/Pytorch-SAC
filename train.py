@@ -76,6 +76,7 @@ class Workspace(object):
         average_episode_reward = 0
         for episode in range(self.cfg.num_eval_episodes):
             obs = self.env.reset()
+            obs = self.agent.encoder(obs)
             self.agent.reset()
             self.video_recorder.init(enabled=(episode == 0))
             done = False
@@ -85,6 +86,7 @@ class Workspace(object):
                     action = self.agent.act(obs, sample=False)
                 for _ in range(1):
                     obs, reward, done, _ = self.env.step(action)
+                    obs = self.agent.encoder(obs)
                     self.video_recorder.record(self.env)
                     episode_reward += reward
 
@@ -116,6 +118,7 @@ class Workspace(object):
                                 self.step)
 
                 obs = self.env.reset()
+                obs = self.agent.encoder(obs)
                 self.agent.reset()
                 done = False
                 episode_reward = 0
@@ -138,6 +141,7 @@ class Workspace(object):
             r = 0
             for _ in range(1):  # Action repeat = 4
                 next_obs, reward, done, _ = self.env.step(action)
+                next_obs = self.agent.encoder(next_obs)
                 r += reward
                 episode_step += 1 * self.cfg.frame_skip
                 self.step += 1 * self.cfg.frame_skip
