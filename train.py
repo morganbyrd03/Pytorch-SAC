@@ -18,7 +18,6 @@ import utils
 import dmc2gym
 import hydra
 
-FRAME_SKIP = 2
 def make_env(cfg):
     """Helper function to create dm_control environment"""
     if cfg.env == 'ball_in_cup_catch':
@@ -55,15 +54,22 @@ class Workspace(object):
         self.device = torch.device(cfg.device)
         self.env = utils.make_env(cfg)
 
-        cfg.agent.params.obs_dim = self.env.observation_space.shape[0]
+        # cfg.agent.params.obs_dim = self.env.observation_space.shape[0]
+        cfg.agent.params.obs_dim = 8  # RMA latent space size
         cfg.agent.params.action_dim = self.env.action_space.shape[0]
+        cfg.agent.params.encoder_obs_dim = self.env.observation_space.shape[0]
         cfg.agent.params.action_range = [
             float(self.env.action_space.low.min()),
             float(self.env.action_space.high.max())
         ]
         self.agent = hydra.utils.instantiate(cfg.agent)
 
-        self.replay_buffer = ReplayBuffer(self.env.observation_space.shape,
+        # self.replay_buffer = ReplayBuffer(self.env.observation_space.shape,
+        #                                   self.env.action_space.shape,
+        #                                   int(cfg.replay_buffer_capacity),
+        #                                   self.device)
+
+        self.replay_buffer = ReplayBuffer((8,),  # Encoded space from RMA encoder
                                           self.env.action_space.shape,
                                           int(cfg.replay_buffer_capacity),
                                           self.device)
@@ -86,7 +92,7 @@ class Workspace(object):
                     action = self.agent.act(obs, sample=False)
                 for _ in range(1):
                     obs, reward, done, _ = self.env.step(action)
-                    obs = self.agent.encoder(obs)
+                    obs = self.agent.encoder(torch.from_numpy(obs).float())
                     self.video_recorder.record(self.env)
                     episode_reward += reward
 
@@ -118,7 +124,7 @@ class Workspace(object):
                                 self.step)
 
                 obs = self.env.reset()
-                obs = self.agent.encoder(obs)
+                obs = self.agent.encoder(torch.from_numpy(obs).float())
                 self.agent.reset()
                 done = False
                 episode_reward = 0
@@ -141,7 +147,7 @@ class Workspace(object):
             r = 0
             for _ in range(1):  # Action repeat = 4
                 next_obs, reward, done, _ = self.env.step(action)
-                next_obs = self.agent.encoder(next_obs)
+                next_obs = self.agent.encoder(torch.from_numpy(next_obs).float())
                 r += reward
                 episode_step += 1 * self.cfg.frame_skip
                 self.step += 1 * self.cfg.frame_skip
@@ -154,7 +160,7 @@ class Workspace(object):
             # episode_reward += reward
             episode_reward += r
 
-            self.replay_buffer.add(obs, action, reward, next_obs, done,
+            self.replay_buffer.add(obs.detach().numpy(), action, reward, next_obs.detach().numpy(), done,
                                    done_no_max)
 
             obs = next_obs

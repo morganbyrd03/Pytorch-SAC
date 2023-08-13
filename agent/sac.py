@@ -17,7 +17,7 @@ class SACAgent(Agent):
                  actor_cfg, discount, init_temperature, alpha_lr, alpha_betas,
                  actor_lr, actor_betas, actor_update_frequency, critic_lr,
                  critic_betas, critic_tau, critic_target_update_frequency,
-                 batch_size, learnable_temperature):
+                 batch_size, learnable_temperature, encoder_obs_dim):
         super().__init__()
 
         self.action_range = action_range
@@ -41,7 +41,7 @@ class SACAgent(Agent):
         # set target entropy to -|A|
         self.target_entropy = -action_dim
 
-        self.encoder = nn.Sequential(nn.Linear(obs_dim, 256), nn.ELU, nn.Linear(256, 64), nn.ELU, nn.Linear(64, 8))
+        self.encoder = nn.Sequential(nn.Linear(encoder_obs_dim, 256), nn.ELU(), nn.Linear(256, 64), nn.ELU(), nn.Linear(64, 8))
 
         # optimizers
         self.actor_optimizer = torch.optim.Adam(list(self.actor.parameters()) + list(self.encoder.parameters()),
