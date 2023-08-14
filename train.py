@@ -54,10 +54,11 @@ class Workspace(object):
         self.device = torch.device(cfg.device)
         self.env = utils.make_env(cfg)
 
-        # cfg.agent.params.obs_dim = self.env.observation_space.shape[0]
-        cfg.agent.params.obs_dim = 8  # RMA latent space size
+        cfg.agent.params.obs_dim = self.env.observation_space.shape[0] - cfg.privileged_size + 1
+        # cfg.agent.params.obs_dim = 1  # RMA latent space size
         cfg.agent.params.action_dim = self.env.action_space.shape[0]
-        cfg.agent.params.encoder_obs_dim = self.env.observation_space.shape[0]
+        cfg.agent.params.encoder_obs_dim = self.env.observation_space.shape[0] - cfg.privileged_size + 1
+        cfg.agent.params.privileged_size = cfg.privileged_size
         cfg.agent.params.action_range = [
             float(self.env.action_space.low.min()),
             float(self.env.action_space.high.max())
@@ -69,7 +70,7 @@ class Workspace(object):
         #                                   int(cfg.replay_buffer_capacity),
         #                                   self.device)
 
-        self.replay_buffer = ReplayBuffer((8,),  # Encoded space from RMA encoder
+        self.replay_buffer = ReplayBuffer((cfg.agent.params.encoder_obs_dim,),  # Encoded space from RMA encoder
                                           self.env.action_space.shape,
                                           int(cfg.replay_buffer_capacity),
                                           self.device)
@@ -82,7 +83,7 @@ class Workspace(object):
         average_episode_reward = 0
         for episode in range(self.cfg.num_eval_episodes):
             obs = self.env.reset()
-            obs = self.agent.encoder(obs)
+            obs = self.agent.encoder(torch.from_numpy(obs).float())
             self.agent.reset()
             self.video_recorder.init(enabled=(episode == 0))
             done = False
@@ -124,7 +125,9 @@ class Workspace(object):
                                 self.step)
 
                 obs = self.env.reset()
+                # print("Obs: ", obs.shape)
                 obs = self.agent.encoder(torch.from_numpy(obs).float())
+                # print("Encoded: ", obs.shape)
                 self.agent.reset()
                 done = False
                 episode_reward = 0

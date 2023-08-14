@@ -22,6 +22,7 @@ agent:
     batch_size: 1024
     learnable_temperature: true
     encoder_obs_dim: ???
+    privileged_size: 1
     
 double_q_critic:
   class: agent.critic.DoubleQCritic

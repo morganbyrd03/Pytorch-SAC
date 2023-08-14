@@ -17,7 +17,7 @@ class SACAgent(Agent):
                  actor_cfg, discount, init_temperature, alpha_lr, alpha_betas,
                  actor_lr, actor_betas, actor_update_frequency, critic_lr,
                  critic_betas, critic_tau, critic_target_update_frequency,
-                 batch_size, learnable_temperature, encoder_obs_dim):
+                 batch_size, learnable_temperature, encoder_obs_dim, privileged_size):
         super().__init__()
 
         self.action_range = action_range
@@ -40,8 +40,34 @@ class SACAgent(Agent):
         self.log_alpha.requires_grad = True
         # set target entropy to -|A|
         self.target_entropy = -action_dim
+        self.privileged_size = privileged_size
 
-        self.encoder = nn.Sequential(nn.Linear(encoder_obs_dim, 256), nn.ELU(), nn.Linear(256, 64), nn.ELU(), nn.Linear(64, 8))
+        # self.encoder = nn.Sequential(nn.Linear(encoder_obs_dim, 128), nn.ELU(),
+        #                              nn.Linear(128, 64), nn.ELU(),
+        #                              nn.Linear(64, obs_dim))
+
+        class Encoder(nn.Module):
+            def __init__(self, privileged_size=privileged_size):
+                super().__init__()
+                self.privileged_size = privileged_size
+                self.layers = [nn.Linear(privileged_size, 128),
+                               nn.Linear(128, 64)]
+                self.last_layer = nn.Linear(64, 1)
+                self.elu = nn.ELU()
+
+            def forward(self, x):
+                # print("Input: ", x)
+                observable = x[:-self.privileged_size]
+                # print("Observable: ", observable.shape)
+                x = x[-self.privileged_size:]
+                # print("Privileged: ", x.shape)
+                for layer in self.layers:
+                    x = layer(x)
+                    x = self.elu(x)
+                x = self.last_layer(x)
+                x = torch.cat((x, observable), dim=0)
+                return x
+        self.encoder = Encoder()
 
         # optimizers
         self.actor_optimizer = torch.optim.Adam(list(self.actor.parameters()) + list(self.encoder.parameters()),
@@ -62,6 +88,7 @@ class SACAgent(Agent):
         self.critic_target.train()
 
         self.save_path = "/home/morgan/Documents/pytorch_sac/models/"
+        os.mkdir(os.getcwd() + "/models")
         self.save_path = os.path.join(os.getcwd(), "models")
 
     def train(self, training=True):

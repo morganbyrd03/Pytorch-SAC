@@ -16,17 +16,18 @@ if __name__ == "__main__":
     commands_to_run = [
         # "python train.py env=thrower_throw num_train_steps=2e6 seed=0",
         # "python train.py env=thrower_throw num_train_steps=2e6 seed=1",
-        # "python train.py env=thrower_throw num_train_steps=2e6 seed=2",
+        "python train.py env=thrower_throw num_train_steps=2e6 seed=3",
         # "python train.py env=pusher_push num_train_steps=2e6 seed=0"
         # "python train.py env=pusher_push num_train_steps=2e6 seed=1",
-        # "python train.py env=pusher_push num_train_steps=2e6 seed=2",
+        "python train.py env=pusher_push num_train_steps=2e6 seed=3",
         # "python train.py env=walker_run num_train_steps=2e6 seed=0",
         # "python train.py env=walker_run num_train_steps=2e6 seed=1",
-        # "python train.py env=walker_run num_train_steps=2e6 seed=2",
+        "python train.py env=walker_run num_train_steps=2e6 seed=3",
         # "python train.py env=cheetah_run num_train_steps=2e6 seed=0",
-        "python train.py env=pendulum_swingup num_train_steps=3e6 seed=2 frame_skip=4",
-        "python train.py env=cheetah_run num_train_steps=2e6 seed=1",
-        "python train.py env=cheetah_run num_train_steps=2e6 seed=2",
+        # "python train.py env=pendulum_swingup num_train_steps=3e6 seed=2 frame_skip=4",
+        # "python train.py env=cheetah_run num_train_steps=2e6 seed=1",
+        "python train.py env=cheetah_run num_train_steps=2e6 seed=3 privileged_size=2",
+        "python train.py env=pendulum_swingup num_train_steps=2e6 seed=3 frame_skip=4"
     ]
 
     run_commands(commands_to_run)
